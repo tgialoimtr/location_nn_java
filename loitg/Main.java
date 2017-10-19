@@ -9,9 +9,24 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Scanner;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.Path;
+
 
 public class Main {
 
+	public static void copyAndRename(String source, String dst) {
+		Path src = Paths.get(source);
+	  Path dest =  Paths.get(dst);
+	  try {
+	      Files.copy(src,dest);
+	  } catch (IOException e) {
+	      e.printStackTrace();
+	  }
+	}
+	
 	public static List<String> readFileToList(String txtFile) {
 	    BufferedReader br = null;
 	    String line = "";
@@ -39,10 +54,16 @@ public class Main {
 	    return result;
 	}
 	public static void main(String[] args) {
-//		Searcher searcher = new Searcher("/home/loitg/trung_kw_3.csv");
-		Searcher searcher = new Searcher("/home/loitg/workspace/receipttest/rescources/db/top200.csv");
+		args = new String[2];
+		args[0] = "/home/loitg/Downloads/part2/";
+		args[1] = "/home/loitg/workspace/location_nn/resources/";
+		args[2] = "/home/loitg/workspace/receipttest/rescources/db/images.txt"; //text results
+		args[3] = "/home/loitg/workspace/receipttest/rescources/db/top200.csv"; //top200.csv
 		
-		List<String> allines = readFileToList("/home/loitg/workspace/receipttest/rescources/db/images.txt");
+//		Searcher searcher = new Searcher("/home/loitg/trung_kw_3.csv");
+		Searcher searcher = new Searcher(args[3]);
+		
+		List<String> allines = readFileToList(args[2]);
 		String filename = null;
 		HashMap<String, List<String>> prediction = new HashMap<String, List<String>>();
 		HashMap<String, List<String>> images = new HashMap<String, List<String>>();
@@ -77,8 +98,11 @@ public class Main {
 		
 		for (HashMap.Entry<String, List<String>> entry : images.entrySet()) {
 			System.out.print(entry.getKey() + ',');
+			int i = 0;
 			for (String fn : entry.getValue()) {
 				System.out.print(fn + ' ');
+				i++;
+				copyAndRename(args[0] + fn, args[1] + String.format("%-12s", entry.getKey() ).replace(' ', '0') + '_' + i + ".jpg");
 			}
 			System.out.println();
 		}
