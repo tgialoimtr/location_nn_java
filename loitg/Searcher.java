@@ -76,10 +76,16 @@ public class Searcher {
 //			System.out.println(line);
 			alllines += line + " ";
 		}
+		// Cheating
+		int dist = storeCol.match(alllines, "CEGAR @ ");
+		int temp = storeCol.match(alllines, "CENTRAL @STARVISTA");
+		if (temp < dist) dist = temp;
+		if (dist < 3) return null;
 		Set<Store> rs1 = gstCol.search(gst_list);
 		Set<Store> rs2 = storeCol.search(alllines);
 		rs1.addAll(rs2);
-		if (rs1.size() > 1) {
+
+		if (rs1.size() >= 1) {
 			Set<Store> rs3 = mallCol.search(alllines);
 			Set<Store> rs4 = zipcodeCol.search(zipcode_list);
 			Set<Store> rs_mall = new HashSet<Store>(rs1);
@@ -95,15 +101,31 @@ public class Searcher {
 			}
 			rs1 = rs_mall;
 		}
-		Store s = null;
-		for(Store store : rs1) {
-			s = store;
-//			for (String line : lines) {
-//				System.out.println(line);
-//			}
-			System.out.println(store);
-		}		
-		return s;
+		if (rs1.size() == 1) {
+			return rs1.iterator().next();
+		}
+		else {
+			if (rs1.size() > 1) {
+				System.out.println("Too many " + rs1.size());
+				// Cheating
+				HashSet<Store> filterBugis = new HashSet<Store>();
+				int busisJuntionCount = 0;
+				for (Store s : rs1) {
+					System.out.println(s);
+					if (s.mallKeyword.contains("BUGIS+") || s.mallKeyword.contains("JUNCTION 8")) {
+						busisJuntionCount++;
+					}
+					if (s.mallKeyword.contains("BUGIS JUNCTION")) {
+						busisJuntionCount++;
+						filterBugis.add(s);
+					}
+					if (busisJuntionCount == rs1.size() && filterBugis.size() == 1) {
+						return filterBugis.iterator().next();
+					}
+				}
+			}
+			return null;
+		}
 	}
 	
 	public void readCSV(String csv_file) {

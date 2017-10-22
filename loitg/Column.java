@@ -41,7 +41,7 @@ public class Column {
 		String[] newvals = rawval.split("\\|");
 		for (int i = 0; i < newvals.length; i++) {
 			String newval = Store.standardizeByName(this.name, newvals[i]);
-
+			if (newval.length() < 6) continue;
 			Description desc = values.get(newval);
 			if (desc != null) {
 				desc.rows.add(store);
@@ -85,7 +85,7 @@ public class Column {
 		}
 		for(int i = 0; i < 4; i++) {
 			Result rs = result0.poll();
-			if ((rs != null) && rs.prob > 0.8) {
+			if ((rs != null) && rs.prob > 0.5) {
 				result1.addAll(this.values.get(rs.value).rows);
 			} else {
 				break;
@@ -101,7 +101,7 @@ public class Column {
 			String value = value_desc.getKey();
 			int dist = match(allines_std, value);
 			double punish = value.length();
-			if (dist < value.length()) {
+			if ((dist < value.length()) && ((value.length() > 7) || (dist == 0))) {
 				double x = (punish-dist)/punish - 0.75;
 				punish = punish - 2;
 				punish = punish*punish;
@@ -116,7 +116,7 @@ public class Column {
 		Set<Store> result1 = new HashSet<Store>();
 		for(int i = 0; i < 4; i++) {
 			Result rs = result0.poll();
-			if ((rs != null) && rs.prob > 0.8) {
+			if ((rs != null) && rs.prob > 0.5) {
 				result1.addAll(this.values.get(rs.value).rows);
 			} else {
 				break;
@@ -131,7 +131,7 @@ public class Column {
 		if (result > c) result = c;
 		return result;
 	}
-	private int match(String text, String pattern) {
+	public int match(String text, String pattern) {
 		int n = text.length();
 		int m = pattern.length();
 		int[][] g = new int[m + 1][n + 1];
