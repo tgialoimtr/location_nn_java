@@ -13,6 +13,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import loitg.Column.Description;
+import loitg.Column;
 
 
 public class Searcher {
@@ -21,7 +22,22 @@ public class Searcher {
 	private static final Pattern RE_GST2 = Pattern.compile("([rR][eE][gG]|[gG][$sS5][tT]).*?(\\w{1,2}-?\\w{6,8}-?\\w{1,2})\\W");
 	private static final Pattern RE_ZIPCODE1 = Pattern.compile("([sS5][li1I][nN]|[pP][oO0][rR][eE]).*?([\\dOoDBQSIl\\']{5,7})\\W+");
 	private static final Pattern RE_ZIPCODE2 = Pattern.compile("\\W(\\([S5]\\)|[S5][GE]?)[ ]{0,3}([\\dOoDBQSIl\\']{5,7})\\W+");
-			    
+		
+	public static String addColor(String raw, String name, List<String> founds) {
+		String[] row = raw.split("\\|", -1);
+		String rs = "";
+		for(String s: row) {
+			s = Store.standardizeByName(name, s).trim();
+			if ((!founds.isEmpty()) && founds.contains(s)) {
+				rs += Column.s2c(s) + s + Column.ANSI_RESET;
+			} else {
+				rs += s;
+			}
+			rs += "|";
+		}
+		return rs;
+	}
+	
 	public Searcher(String database_file) {
 		data = new ArrayList<Store>();
 		readCSV(database_file);
@@ -81,13 +97,17 @@ public class Searcher {
 		int temp = storeCol.match(alllines, "CENTRAL @STARVISTA");
 		if (temp < dist) dist = temp;
 		if (dist < 3) return null;
-		Set<Store> rs1 = gstCol.search(gst_list);
-		Set<Store> rs2 = storeCol.search(alllines);
+		ArrayList<String> founds = new ArrayList<String>();
+		System.out.println("GST:");
+		Set<Store> rs1 = gstCol.search(gst_list, founds);
+		System.out.println("Merchant:");
+		Set<Store> rs2 = storeCol.search(alllines, founds);
 		rs1.addAll(rs2);
-
 		if (rs1.size() >= 1) {
-			Set<Store> rs3 = mallCol.search(alllines);
-			Set<Store> rs4 = zipcodeCol.search(zipcode_list);
+			System.out.println("Mall:");
+			Set<Store> rs3 = mallCol.search(alllines, founds);
+			System.out.println("Zipcode:");
+			Set<Store> rs4 = zipcodeCol.search(zipcode_list, founds);
 			Set<Store> rs_mall = new HashSet<Store>(rs1);
 			rs_mall.retainAll(rs3);
 			Set<Store> rs_zc = new HashSet<Store>(rs1);
@@ -101,17 +121,21 @@ public class Searcher {
 			}
 			rs1 = rs_mall;
 		}
+		System.out.println("Found " + rs1.size() + " location code(s):");
+		for(Store s: rs1) {
+			
+			System.out.println(String.format("\t%-13s:%30s---%s", s.locationCode, addColor(s.mallKeyword, Store.MALL_NAME, founds), 
+					addColor(s.storeKeyword, Store.STORE_NAME, founds)));
+		}
 		if (rs1.size() == 1) {
 			return rs1.iterator().next();
 		}
 		else {
 			if (rs1.size() > 1) {
-				System.out.println("Too many " + rs1.size());
 				// Cheating
 				HashSet<Store> filterBugis = new HashSet<Store>();
 				int busisJuntionCount = 0;
 				for (Store s : rs1) {
-					System.out.println(s);
 					if (s.mallKeyword.contains("BUGIS+") || s.mallKeyword.contains("JUNCTION 8")) {
 						busisJuntionCount++;
 					}
@@ -139,7 +163,7 @@ public class Searcher {
             line = br.readLine();
             while ((line = br.readLine()) != null) {
                 // use comma as separator
-                String[] row = line.split(cvsSplitBy,-1);
+                String[] row = line.split(cvsSplitBy, -1);
 //                Store store = new Store(row[0],row[4],row[6],row[2],row[1]);
                 Store store = new Store(row[1],row[4],row[3],row[5],row[6]);
                 data.add(store);

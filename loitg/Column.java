@@ -1,6 +1,7 @@
 package loitg;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -10,7 +11,22 @@ import java.util.Set;
 import java.util.PriorityQueue;
 
 public class Column {
-
+	public static final String ANSI_RESET = "\u001B[0m";
+	public static final String ANSI_BLACK = "\u001B[30m";
+	public static final String ANSI_RED = "\u001B[31m";
+	public static final String ANSI_GREEN = "\u001B[32m";
+	public static final String ANSI_YELLOW = "\u001B[33m";
+	public static final String ANSI_BLUE = "\u001B[34m";
+	public static final String ANSI_PURPLE = "\u001B[35m";
+	public static final String ANSI_CYAN = "\u001B[36m";
+	public static final String ANSI_WHITE = "\u001B[37m";
+	public static final List<String> ANSI_COLORS = Arrays.asList(ANSI_RED, ANSI_GREEN, ANSI_YELLOW, ANSI_BLUE, ANSI_PURPLE, ANSI_CYAN);
+	
+	public static String s2c(String input) {
+		int index = input.hashCode() % ANSI_COLORS.size();
+		index =  (index +ANSI_COLORS.size()) % ANSI_COLORS.size();
+		return ANSI_COLORS.get(index);
+	}
 	
 	public class Description
 	{
@@ -67,7 +83,7 @@ public class Column {
 		}
 	}	
 	
-	public Set<Store> search(List<String> items) {	
+	public Set<Store> search(List<String> items, List<String> founds) {	
 		Set<Store> result1 = new HashSet<Store>();
 		if (items.isEmpty()) return result1;
 		PriorityQueue<Result> result0 = new PriorityQueue<Result>(this.values.size(), Collections.reverseOrder());
@@ -79,6 +95,10 @@ public class Column {
 				double temp = Math.exp(-dist/this.errorToProb);
 				if (temp > prob) {
 					prob = temp;
+				}
+				if (temp > 0.5) {
+					System.out.println(String.format("\tMATCH %d%% of " + s2c(value.trim()) + "\"%s\"" +ANSI_RESET+ " from ", Math.round(100f*temp), value.trim()));
+					founds.add(value.trim());
 				}
 			}
 			result0.add(new Result(prob, value));
@@ -94,7 +114,7 @@ public class Column {
 		return result1;
 	}
 	
-	public Set<Store> search(String alllines) {
+	public Set<Store> search(String alllines, List<String> founds) {
 		PriorityQueue<Result> result0 = new PriorityQueue<Result>(this.values.size(), Collections.reverseOrder());
 		String allines_std = Store.standardizeByName(this.name, alllines);
 		for(Map.Entry<String, Description> value_desc : this.values.entrySet()) {
@@ -108,6 +128,10 @@ public class Column {
 				punish = punish/(punish + this.shortWordPunish);
 //				double prob = Math.exp(-dist/this.errorToProb)*punish;
 				double prob = (0.5*Math.tanh(15*x)+0.5)*punish;
+				if (prob > 0.5) {
+					System.out.println(String.format("\tMATCH %d%% of " + s2c(value.trim()) + "\"%s\"" +ANSI_RESET+ " from ", Math.round(100f*prob), value.trim()));
+					founds.add(value.trim());
+				}
 				result0.add(new Result(prob, value));
 			} else {
 				result0.add(new Result(0.0, value));
