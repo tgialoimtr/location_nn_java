@@ -27,16 +27,29 @@ public class Column {
 		index =  (index +ANSI_COLORS.size()) % ANSI_COLORS.size();
 		return ANSI_COLORS.get(index);
 	}
-	
+	public static class MatchResult {
+		MatchResult() {
+			matchedStr = "";
+			matchedPos = 0;
+			numMatchedChar = 0;
+		}
+		String matchedStr;
+		int matchedPos;
+		int numMatchedChar;
+	}
+
 	public class Description
 	{
-		public Description(Store firstStore) {
+		public Description(Store firstStore, String exact) {
 			this.rows = new HashSet<Store>();
 			this.rows.add(firstStore);
+			this.exact = exact;
 		}
-		
+		public Description(Store firstStore) {
+			this(firstStore, ""); 
+		}		
 		public Set<Store> rows;
-		
+		public String exact;
 	};
 	
 	public Column(String name, double e2p, double swp) {
@@ -57,12 +70,26 @@ public class Column {
 		String[] newvals = rawval.split("\\|");
 		for (int i = 0; i < newvals.length; i++) {
 			String newval = Store.standardizeByName(this.name, newvals[i]);
-			if (newval.length() < 6) continue;
+			String exact = "";
+			if (newval.contains("::")) {
+				String[] kwandexact = newval.split("::");
+				newval = kwandexact[0];
+				exact = kwandexact[1];
+				System.out.println(newval + "::::5:::::" + exact);
+			}
+			if (newval.length() < 2) {
+				continue;
+			}
+			if (newval.length() < 6) {
+				exact = newval;
+				System.out.println(newval + ":::::::::" + exact);
+			}
 			Description desc = values.get(newval);
 			if (desc != null) {
 				desc.rows.add(store);
+				desc.exact = exact;
 			} else {
-				values.put(newval, new Description(store));
+				values.put(newval, new Description(store, exact));
 			}
 		}
 	}
@@ -97,6 +124,7 @@ public class Column {
 					prob = temp;
 				}
 				if (temp > 0.5) {
+					if (value.trim().equals("")) {System.out.println(value_desc.getValue().rows.iterator().next().locationCode);}
 					System.out.println(String.format("\tMATCH %d%% of " + s2c(value.trim()) + "\"%s\"" +ANSI_RESET+ " from ", Math.round(100f*temp), value.trim()));
 					founds.add(value.trim());
 				}
@@ -119,7 +147,17 @@ public class Column {
 		String allines_std = Store.standardizeByName(this.name, alllines);
 		for(Map.Entry<String, Description> value_desc : this.values.entrySet()) {
 			String value = value_desc.getKey();
-			int dist = match(allines_std, value);
+			MatchResult mrs = new MatchResult();
+			int dist = match(allines_std, value, mrs);
+			String exact = value_desc.getValue().exact;
+			
+			String additionalmsg = "";
+			if ((!exact.equals(""))) {
+				if ((!mrs.matchedStr.contains(exact))) {
+					additionalmsg = "But REJECT because " + mrs.matchedStr + " not contains " + exact.trim();
+					continue;
+				}
+			}
 			double punish = value.length();
 			if ((dist < value.length()) && ((value.length() > 7) || (dist == 0))) {
 				double x = (punish-dist)/punish - 0.75;
@@ -129,7 +167,12 @@ public class Column {
 //				double prob = Math.exp(-dist/this.errorToProb)*punish;
 				double prob = (0.5*Math.tanh(15*x)+0.5)*punish;
 				if (prob > 0.5) {
+					
 					System.out.println(String.format("\tMATCH %d%% of " + s2c(value.trim()) + "\"%s\"" +ANSI_RESET+ " from ", Math.round(100f*prob), value.trim()));
+					if (!additionalmsg.equals("")) {
+						System.out.println(additionalmsg);
+						continue;
+					}
 					founds.add(value.trim());
 				}
 				result0.add(new Result(prob, value));
@@ -155,11 +198,13 @@ public class Column {
 		if (result > c) result = c;
 		return result;
 	}
-	public int match(String text, String pattern) {
+	
+	public int match(String text, String pattern, MatchResult rs) {
 		int n = text.length();
 		int m = pattern.length();
 		int[][] g = new int[m + 1][n + 1];
 		int distance = 999;
+		int pos = 0;
 		for (int i = 0; i < m + 1; ++i) {
 			g[i][0] = i;
 		}
@@ -176,11 +221,26 @@ public class Column {
 			}
 			if (g[m][j] <= distance) {
 				distance = g[m][j];
+				pos = j;
+			}
+		}
+		if (rs != null) {
+			int start = pos - pattern.length();
+			if (start < 0) { start = 0; }
+			rs.matchedStr = text.substring(start, pos);
+			rs.matchedPos = start;
+			rs.numMatchedChar = pattern.length() - distance;
+			if (rs.numMatchedChar < 0) {
+				System.out.println(pattern + "--in--" + rs.matchedStr);
+				System.out.println(pattern.length() + " - " + distance);
 			}
 		}
 		return distance;
 	}    
-	
+
+	public int match(String text, String pattern) {
+		return match(text, pattern, null);
+	}
 	
 	public String name;
 	public HashMap<String, Description> values;
@@ -189,5 +249,3 @@ public class Column {
 	
 	
 }
-
-

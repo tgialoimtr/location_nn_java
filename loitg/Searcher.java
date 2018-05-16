@@ -13,6 +13,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import loitg.Column.Description;
+import loitg.Column.MatchResult;
 import loitg.Column;
 
 
@@ -22,16 +23,79 @@ public class Searcher {
 	private static final Pattern RE_GST2 = Pattern.compile("([rR][eE][gG]|[gG][$sS5][tT]).*?(\\w{1,2}-?\\w{6,8}-?\\w{1,2})\\W");
 	private static final Pattern RE_ZIPCODE1 = Pattern.compile("([sS5][li1I][nN]|[pP][oO0][rR][eE]).*?([\\dOoDBQSIl\\']{5,7})\\W+");
 	private static final Pattern RE_ZIPCODE2 = Pattern.compile("\\W(\\([S5]\\)|[S5][GE]?)[ ]{0,3}([\\dOoDBQSIl\\']{5,7})\\W+");
+	
+	public class StoreCompareInfo implements Comparable<StoreCompareInfo>{
+		int mallCharCount;
+		int storeCharCount;
+		Store store;
+		int winCount;
+		int totalCount;
 		
+		public int compareInt(int a, int b) {
+			if (a<b-2) {
+				return -1;
+			} else if (a>b+2) {
+				return 1;
+			} else {
+				return 0;
+			}
+		}
+		
+		public boolean same(String rawas,String rawbs) {
+			String[] as = rawas.split("\\|");
+			String[] bs = rawbs.split("\\|");
+			for (int i = 0; i < as.length; i++) {
+				for (int j = 0; j < bs.length; j++) {
+					if (as[i].equals(bs[j])) {
+						return true;
+					}
+				}
+			}
+			return false;
+		}
+		@Override
+		public int compareTo(final StoreCompareInfo other) {
+			// MALL
+			boolean samemall = same(this.store.mallKeyword, other.store.mallKeyword);
+			if (samemall) {
+				System.out.print("\tSame Mall ");
+				return compareInt(this.storeCharCount, other.storeCharCount);
+			}
+			//STORE
+			boolean samestore = same(this.store.storeKeyword, other.store.storeKeyword);
+			if (samestore) {
+				System.out.print("\tSame Store ");
+				return compareInt(this.mallCharCount, other.mallCharCount);
+			}
+			//GST
+			boolean samegst = Store.standardizeByName(Store.GST_NO, this.store.gstNoPattern).equals(Store.standardizeByName(Store.GST_NO, other.store.gstNoPattern));
+			if (samegst) {
+				System.out.print("\tSame GST ");
+				return compareInt(this.storeCharCount, other.storeCharCount);
+			}
+			
+			return 0;
+		}
+	}
 	public static String addColor(String raw, String name, List<String> founds) {
 		String[] row = raw.split("\\|", -1);
 		String rs = "";
 		for(String s: row) {
-			s = Store.standardizeByName(name, s).trim();
+			s = Store.standardizeByName(name, s);
+			String exact = "";
+			if (s.contains("::")) {
+				String[] kwandexact = s.split("::");
+				s = kwandexact[0];
+				exact = kwandexact[1];
+			}			
+			s = s.trim();
 			if ((!founds.isEmpty()) && founds.contains(s)) {
 				rs += Column.s2c(s) + s + Column.ANSI_RESET;
 			} else {
 				rs += s;
+			}
+			if (!exact.equals("")) {
+				rs += "::" + exact;
 			}
 			rs += "|";
 		}
@@ -93,10 +157,10 @@ public class Searcher {
 			alllines += line + " ";
 		}
 		// Cheating
-		int dist = storeCol.match(alllines, "CEGAR @ ");
-		int temp = storeCol.match(alllines, "CENTRAL @STARVISTA");
-		if (temp < dist) dist = temp;
-		if (dist < 3) return null;
+//		int dist = storeCol.match(alllines, "CEGAR @ ");
+//		int temp = storeCol.match(alllines, "CENTRAL @STARVISTA");
+//		if (temp < dist) dist = temp;
+//		if (dist < 3) return null;
 		ArrayList<String> founds = new ArrayList<String>();
 		System.out.println("GST:");
 		Set<Store> rs1 = gstCol.search(gst_list, founds);
@@ -121,11 +185,63 @@ public class Searcher {
 			}
 			rs1 = rs_mall;
 		}
-		System.out.println("Found " + rs1.size() + " location code(s):");
+		
+		
+		List<StoreCompareInfo> compareInfos = new ArrayList<StoreCompareInfo>();
 		for(Store s: rs1) {
-			
-			System.out.println(String.format("\t%-13s:%30s---%s", s.locationCode, addColor(s.mallKeyword, Store.MALL_NAME, founds), 
+			StoreCompareInfo ci = new StoreCompareInfo();
+			System.out.print(s.locationCode);
+			ci.mallCharCount = ss(alllines, s.mallKeyword, mallCol);
+			System.out.print(": Mall charcount " + ci.mallCharCount);
+			ci.store = s;
+			ci.storeCharCount = ss(alllines, s.storeKeyword, storeCol);
+			System.out.println(", Store charcount " + ci.storeCharCount);
+			ci.totalCount = ci.mallCharCount + ci.storeCharCount;
+			compareInfos.add(ci);
+		}
+		StoreCompareInfo winner = null;
+		for(int i = 0; i < compareInfos.size()-1; i ++) {
+			for(int j=i+1; j < compareInfos.size(); j++) {
+				int winnerindex = 0;
+				int compareresult = compareInfos.get(i).compareTo(compareInfos.get(j));
+				if (compareresult < 0) {
+					System.out.println(String.format("%d < %d, ",i,j));
+					winnerindex = j;
+				} else if (compareresult > 0) {
+					System.out.println(String.format("%d > %d, ",i,j));
+					winnerindex = i;
+				}
+				compareInfos.get(winnerindex).winCount += 1;
+				if (compareInfos.get(winnerindex).winCount == compareInfos.size()-1) {
+					winner = compareInfos.get(winnerindex);
+				}
+				
+			}
+		}
+		if (winner == null) {
+			if (rs1.size() > 1) {
+				System.out.println("Can't find exact locationcode, will use approximation");
+				for (StoreCompareInfo ci: compareInfos) {
+					if (winner == null || ci.totalCount > winner.totalCount) {
+						winner = ci;
+					}
+				}
+			} else if (rs1.size() == 1) {
+				winner = compareInfos.get(0);
+			}
+		}
+
+		
+		System.out.println("Found " + rs1.size() + " location code(s):");
+		int i = 0;
+		for(Store s: rs1) {
+			String foundcode = s.locationCode;
+			if (s == winner.store) {
+				foundcode = Column.ANSI_RED + foundcode + Column.ANSI_RESET;
+			}
+			System.out.println(String.format("\t%d/%-13s:%30s---%s", i, foundcode, addColor(s.mallKeyword, Store.MALL_NAME, founds), 
 					addColor(s.storeKeyword, Store.STORE_NAME, founds)));
+			i++;
 		}
 		if (rs1.size() == 1) {
 			return rs1.iterator().next();
@@ -150,6 +266,43 @@ public class Searcher {
 			}
 			return null;
 		}
+	}
+	
+	public int ss(String allines, String keywords, Column col) {
+		String allines_std = Store.standardizeByName(col.name, allines);
+		String[] newvals = keywords.split("\\|");
+		int maxVal = 0;
+		int totalVal = 0;
+		for (int i = 0; i < newvals.length; i++) {
+			String newval = Store.standardizeByName(col.name, newvals[i]);
+			String exact = "";
+			if (newval.contains("::")) {
+				String[] kwandexact = newval.split("::");
+				newval = kwandexact[0];
+				exact = kwandexact[1];
+			}
+			if (newval.length() < 6) {
+				exact = newval;
+			}			
+			String value = newval;
+			MatchResult mrs = new MatchResult();
+			int dist = col.match(allines_std, value, mrs);
+
+			if ((!exact.equals(""))) {
+				if ((!mrs.matchedStr.contains(exact))) {
+					continue;
+				}
+			}
+			
+			if (mrs.numMatchedChar > Math.floor(0.6*value.length()) ) {
+				if (mrs.numMatchedChar > maxVal) {
+					maxVal = mrs.numMatchedChar;
+				}
+				totalVal += mrs.numMatchedChar;
+			}
+			
+		}
+		return totalVal;
 	}
 	
 	public void readCSV(String csv_file) {
