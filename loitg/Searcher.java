@@ -21,8 +21,8 @@ public class Searcher {
 
 	private static final Pattern RE_GST1 = Pattern.compile("\\W+([MHNl21I][\\dOo$DBQRSIl\\']-?[\\dOoDBQ$SIl\\']{7,8}[ ]{0,3}-?[ ]{0,3}\\w)\\W+");
 	private static final Pattern RE_GST2 = Pattern.compile("([rR][eE][gG]|[gG][$sS5][tT]).*?(\\w{1,2}-?\\w{6,8}-?\\w{1,2})\\W");
-	private static final Pattern RE_ZIPCODE1 = Pattern.compile("([sS5][li1I][nN]|[pP][oO0][rR][eE]).*?([\\dOoDBQSIl\\']{5,7})\\W+");
-	private static final Pattern RE_ZIPCODE2 = Pattern.compile("\\W(\\([S5]\\)|[S5][GE]?)[ ]{0,3}([\\dOoDBQSIl\\']{5,7})\\W+");
+	private static final Pattern RE_ZIPCODE1 = Pattern.compile("([sS5][li1I][nN]|[pP][oO0][rR][eE]).*?([\\dOoDBQSIl$]{5,7})\\W+");
+	private static final Pattern RE_ZIPCODE2 = Pattern.compile("\\W(\\([S5]\\)|[S5][GE]?)[ ]{0,3}\\(?([\\dOoDBQSIl$]{5,7})\\W+");
 	
 	public class StoreCompareInfo implements Comparable<StoreCompareInfo>{
 		int mallCharCount;
@@ -125,28 +125,28 @@ public class Searcher {
 		List<String> zipcode_list = new ArrayList<String>();
 		String alllines = "";
 		for (String line : lines) {
-			Matcher matcher_gst1 = RE_GST1.matcher(line);
+			Matcher matcher_gst1 = RE_GST1.matcher(line + " ");
 			while (matcher_gst1.find()) {
 				String temp = matcher_gst1.group(1);
 //				System.out.println("gst1 - " + line);
 //				System.out.println(temp + "-->" + Store.standardizeByName(Store.GST_NO, temp)); 
 				gst_list.add(Store.standardizeByName(Store.GST_NO, temp));
 			}
-			Matcher matcher_gst2 = RE_GST2.matcher(line);
+			Matcher matcher_gst2 = RE_GST2.matcher(line + " ");
 			while (matcher_gst2.find()) {
 				String temp = matcher_gst2.group(2);
 //				System.out.println("gst2 - " + line);
 //				System.out.println(temp + "-->" + Store.standardizeByName(Store.GST_NO, temp));
 				gst_list.add(Store.standardizeByName(Store.GST_NO, temp));
 			}
-			Matcher matcher_zipcode1 = RE_ZIPCODE1.matcher(line);
+			Matcher matcher_zipcode1 = RE_ZIPCODE1.matcher(line + " ");
 			while (matcher_zipcode1.find()) {
 				String temp = matcher_zipcode1.group(2);
 //				System.out.println("zc1 - " + line);
 //				System.out.println(temp + "-->" + Store.standardizeByName(Store.ZIPCODE, temp));
 				zipcode_list.add(Store.standardizeByName(Store.ZIPCODE, temp));
 			}
-			Matcher matcher_zipcode2 = RE_ZIPCODE2.matcher(line);
+			Matcher matcher_zipcode2 = RE_ZIPCODE2.matcher(line + " ");
 			while (matcher_zipcode2.find()) {
 				String temp = matcher_zipcode2.group(2);
 //				System.out.println("zc2 - " + line);
@@ -155,7 +155,7 @@ public class Searcher {
 			}
 //			System.out.println(line);
 			alllines += line + " ";
-		}
+		}		
 		// Cheating
 //		int dist = storeCol.match(alllines, "CEGAR @ ");
 //		int temp = storeCol.match(alllines, "CENTRAL @STARVISTA");
@@ -243,27 +243,10 @@ public class Searcher {
 					addColor(s.storeKeyword, Store.STORE_NAME, founds)));
 			i++;
 		}
-		if (rs1.size() == 1) {
-			return rs1.iterator().next();
+		if (winner!= null && winner.store!= null) {
+			return winner.store;
 		}
 		else {
-			if (rs1.size() > 1) {
-				// Cheating
-				HashSet<Store> filterBugis = new HashSet<Store>();
-				int busisJuntionCount = 0;
-				for (Store s : rs1) {
-					if (s.mallKeyword.contains("BUGIS+") || s.mallKeyword.contains("JUNCTION 8")) {
-						busisJuntionCount++;
-					}
-					if (s.mallKeyword.contains("BUGIS JUNCTION")) {
-						busisJuntionCount++;
-						filterBugis.add(s);
-					}
-					if (busisJuntionCount == rs1.size() && filterBugis.size() == 1) {
-						return filterBugis.iterator().next();
-					}
-				}
-			}
 			return null;
 		}
 	}

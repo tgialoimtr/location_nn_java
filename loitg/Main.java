@@ -160,20 +160,26 @@ public class Main {
 		File imageFolder = new File(args[0]);
 		
 		List<String> codeList = null;
-		if (args.length >3 &&args[3].contains("-")) {
-			List<String> intList = Arrays.asList(args[3].split("-"));
-			codeList = new ArrayList<String>();
-			int lower = Integer.parseInt(intList.get(0))-1;
-			int upper = Integer.parseInt(intList.get(1))-1;
-			if (lower < 1) {lower = 1;}
-			List<List<String> > topx00data = readCsvFile(args[2]);
-			if (upper > topx00data.size()) { upper = topx00data.size()-1;}
-			for(int i = lower; i <= upper; i++) {
-				codeList.add(topx00data.get(i).get(1));
+		boolean reversedlist = false;
+		if (args.length >3) {
+			if (args[3].substring(0,1).equals("~")) {
+				args[3] = args[3].substring(1);
+				reversedlist = true;
 			}
-			
-		} else if (args.length >3) {
-			codeList = Arrays.asList(args[3].split(","));
+			if (args[3].contains("-")) {
+				List<String> intList = Arrays.asList(args[3].split("-"));
+				codeList = new ArrayList<String>();
+				int lower = Integer.parseInt(intList.get(0))-1;
+				int upper = Integer.parseInt(intList.get(1))-1;
+				if (lower < 1) {lower = 1;}
+				List<List<String> > topx00data = readCsvFile(args[2]);
+				if (upper > topx00data.size()) { upper = topx00data.size()-1;}
+				for(int i = lower; i <= upper; i++) {
+					codeList.add(topx00data.get(i).get(1));
+				}
+			} else {
+				codeList = Arrays.asList(args[3].split(","));
+			}
 		}
 		if (codeList != null) {
 			System.out.println("Codes filterred: " + Arrays.toString(codeList.toArray()));
@@ -189,6 +195,7 @@ public class Main {
 		HashMap<String, List<String>> prediction = new HashMap<String, List<String>>();
 		  File dir = new File(args[1]);
 		  File[] directoryListing = dir.listFiles();
+		  int undetected=0, sucess=0, fail =0;
 		  if (directoryListing != null) {
 		    for (File child : directoryListing) {
 		    	String filename = child.getName();
@@ -197,7 +204,7 @@ public class Main {
 		    	String receiptFilePath = findReceiptFilePath(fileNames, filename);
 		    	
 		    	
-		    	
+		    	if (receiptFilePath == null) continue;
               File csvFile = new File(receiptFilePath.substring(0, receiptFilePath.length() - 4) + ".csv");
                 if (csvFile.exists()) {
 
@@ -226,8 +233,16 @@ public class Main {
 //                        String crmReceiptNo = crmRecord.get(2);
 //                        String crmAmount = crmRecord.get(3);
                        
+                       boolean containCond;
+                       if (codeList == null) {
+                    	   containCond = true;
+                       } else if (reversedlist) {
+                    	   containCond = !codeList.contains(crmLocationCode);
+                       } else {
+                    	   containCond = codeList.contains(crmLocationCode);
+                       }
                        
-                       if (codeList == null || codeList.contains(crmLocationCode)) {
+                       if (containCond) {
                     	   System.out.println("-------" + filename);
                     	   System.out.println("full---" + receiptFilePath);
 	           		    	List<String> lines = readFileToList(child.getAbsolutePath());
@@ -235,6 +250,18 @@ public class Main {
                     	   
                     	   System.out.println("Actual Code:");
                     	   System.out.println("\t" + crmLocationCode);
+                    	   
+                    	   if (rs == null) {
+                    		   undetected++;
+                    		   System.out.println(Column.ANSI_GREEN + "======================  UNDETECTED ===================="+Column.ANSI_RESET);
+                    	   } else if (!rs.locationCode.equals(crmLocationCode)) {
+                    		   System.out.println(Column.ANSI_RED + "================================  WRONG ==============================" + Column.ANSI_RESET);
+                    		   System.out.println(Column.ANSI_RED + "================================  WRONG ==============================" + Column.ANSI_RESET);
+                    		   System.out.println(Column.ANSI_RED + "================================  WRONG ==============================" + Column.ANSI_RESET);
+                    		   fail++;
+                    	   } else {
+                    		   sucess++;
+                    	   }
                        }
                     }
                 }
@@ -243,6 +270,7 @@ public class Main {
 		    	
 		    	
 		    }
+		    System.out.println("UNDETECTED: "+undetected +", SUCCESS: " + sucess +", FAIL: "+ fail);
 		    if (codeList != null) {
 		    	System.out.println("Codes filterred: " + Arrays.toString(codeList.toArray()));
 		    }
