@@ -9,7 +9,7 @@ public class Store {
 	
 	@Override
 	public String toString() {
-		return "code: " + this.locationCode + ", mall: " + this.mallKeyword + ", store: " + this.storeKeyword + ", zipcode: " + this.zipcode + ", gstno: " + this.gstNoPattern;
+		return this.locationCode + "=,=" + this.mallKeyword + "=,=" + this.storeKeyword + "=,=" + this.zipcode + "=,=" + this.gstNoPattern;
 	}
 	
 	public static String standardizeByName(String colname, String rawValue) {
