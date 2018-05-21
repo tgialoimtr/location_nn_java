@@ -19,7 +19,7 @@ public class Store {
 			return "";
 		case Store.STORE_NAME:
 		case Store.MALL_NAME:
-			temp = rawValue.replaceAll("5", "S").replaceAll("[1:]", "I").replaceAll("0", "O").replaceAll("8", "B");
+			temp = rawValue.replaceAll("5", "S").replaceAll("::", " :: ").replaceAll("1", "I").replaceAll("0", "O").replaceAll("8", "B");
 			temp = temp.toUpperCase();
 			temp = temp.replaceAll(" +", " ");
 			return " "+temp+" ";
