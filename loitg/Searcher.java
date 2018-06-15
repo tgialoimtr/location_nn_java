@@ -167,28 +167,23 @@ public class Searcher {
 		StoreCompareInfo winner = null;
 		for(int i = 0; i < compareInfos.size()-1; i ++) {
 			for(int j=i+1; j < compareInfos.size(); j++) {
-				int winnerindex = 0;
+				int winnerindex = -1;
 				int compareresult = compareInfos.get(i).compareTo(compareInfos.get(j));
 				if (compareresult < 0) {
 					winnerindex = j;
 				} else if (compareresult > 0) {
 					winnerindex = i;
 				}
-				compareInfos.get(winnerindex).winCount += 1;
-				if (compareInfos.get(winnerindex).winCount == compareInfos.size()-1) {
-					winner = compareInfos.get(winnerindex);
+				if (winnerindex >= 0) {
+					compareInfos.get(winnerindex).winCount += 1;
+					if (compareInfos.get(winnerindex).winCount == compareInfos.size()-1) {
+						winner = compareInfos.get(winnerindex);
+					}
 				}
-				
 			}
 		}
 		if (winner == null) {
-			if (rs1.size() > 1) {
-				for (StoreCompareInfo ci: compareInfos) {
-					if (winner == null || ci.totalCount > winner.totalCount) {
-						winner = ci;
-					}
-				}
-			} else if (rs1.size() == 1) {
+			if (rs1.size() == 1) {
 				winner = compareInfos.get(0);
 			}
 		}
