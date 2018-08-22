@@ -63,6 +63,10 @@ public class Main {
 	
 	
 	public static void main(String[] args) {
+        if (args[0].equals("-v")) {
+            System.out.println("20180717T073800_master");
+            System.exit(0);
+        }
 		Searcher searcher = new Searcher(args[0]);
 		List<String> allines = readFileToList(args[1]);
 		Store rs1 = searcher.search(allines);

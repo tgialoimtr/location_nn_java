@@ -117,9 +117,9 @@ public class Column {
 			if (rs == null) {
 				break;
 			} else {
+				if (rs.prob < 0.50 || (rs.prob < 0.90 && selectedCount >= 4)) break;
 				result1.addAll(this.values.get(rs.value).rows);
 				selectedCount++;
-				if (rs.prob < 0.85 && selectedCount >= 4) break;
 			}
 		}
 		return result1;
@@ -159,9 +159,9 @@ public class Column {
 			if (rs == null) {
 				break;
 			} else {
+				if (rs.prob < 0.50 || (rs.prob < 0.90 && selectedCount >= 4)) break;
 				result1.addAll(this.values.get(rs.value).rows);
 				selectedCount++;
-				if (rs.prob < 0.85 && selectedCount >= 4) break;
 			}
 		}
 		return result1;
