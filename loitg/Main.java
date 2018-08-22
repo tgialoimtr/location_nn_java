@@ -150,6 +150,9 @@ public class Main {
     
 	public static void main(String[] args) {
 		if (args.length < 3) {
+            if (args[0].equals("-v")) {
+                System.out.println("20180716T152000_analdat");
+            }
 			System.out.println("groupby, texts, topx00, range/list");
 			System.exit(0);
 			args = new String[4];

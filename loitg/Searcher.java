@@ -167,21 +167,47 @@ public class Searcher {
 		System.out.println("Merchant:");
 		Set<Store> rs2 = storeCol.search(alllines, founds);
 		rs1.addAll(rs2);
+		for (Store s: rs1) {
+			System.out.print(s.locationCode + ", ");
+		}
 		if (rs1.size() >= 1) {
 			System.out.println("Mall:");
 			Set<Store> rs3 = mallCol.search(alllines, founds);
+			System.out.print("rs3: ");
+			for (Store s: rs3) {
+				System.out.print(s.locationCode + ", ");
+			}
 			System.out.println("Zipcode:");
 			Set<Store> rs4 = zipcodeCol.search(zipcode_list, founds);
+			System.out.print("rs4: ");
+			for (Store s: rs4) {
+				System.out.print(s.locationCode + ", ");
+			}
 			Set<Store> rs_mall = new HashSet<Store>(rs1);
 			rs_mall.retainAll(rs3);
+			System.out.print("\nrs_mall: ");
+			for (Store s: rs_mall) {
+				System.out.print(s.locationCode + ", ");
+			}
 			Set<Store> rs_zc = new HashSet<Store>(rs1);
 			rs_zc.retainAll(rs4);
+			System.out.print("\nrs_zc: ");
+			for (Store s: rs_zc) {
+				System.out.print(s.locationCode + ", ");
+			}
 			if (rs_mall.isEmpty() && rs_zc.isEmpty()) {
+				System.out.println("case1 ");
 				return null;
 			} else if (rs_mall.size() > 1 && (!rs_zc.isEmpty())) {
+				System.out.println("case2 ");
 				rs_mall.retainAll(rs_zc);
 			} else if (rs_mall.isEmpty()) {
+				System.out.println("case3 ");
 				rs_mall = rs_zc;
+			}
+			System.out.print("rs_mall: ");
+			for (Store s: rs_mall) {
+				System.out.print(s.locationCode + ", ");
 			}
 			rs1 = rs_mall;
 		}
@@ -202,7 +228,7 @@ public class Searcher {
 		StoreCompareInfo winner = null;
 		for(int i = 0; i < compareInfos.size()-1; i ++) {
 			for(int j=i+1; j < compareInfos.size(); j++) {
-				int winnerindex = 0;
+				int winnerindex = -1;
 				int compareresult = compareInfos.get(i).compareTo(compareInfos.get(j));
 				if (compareresult < 0) {
 					System.out.println(String.format("%d < %d, ",i,j));
@@ -210,23 +236,19 @@ public class Searcher {
 				} else if (compareresult > 0) {
 					System.out.println(String.format("%d > %d, ",i,j));
 					winnerindex = i;
+				} else {
+					System.out.println(String.format("%d = %d, ",i,j));
 				}
-				compareInfos.get(winnerindex).winCount += 1;
-				if (compareInfos.get(winnerindex).winCount == compareInfos.size()-1) {
-					winner = compareInfos.get(winnerindex);
+				if (winnerindex >= 0) {
+					compareInfos.get(winnerindex).winCount += 1;
+					if (compareInfos.get(winnerindex).winCount == compareInfos.size()-1) {
+						winner = compareInfos.get(winnerindex);
+					}
 				}
-				
 			}
 		}
 		if (winner == null) {
-			if (rs1.size() > 1) {
-				System.out.println("Can't find exact locationcode, will use approximation");
-				for (StoreCompareInfo ci: compareInfos) {
-					if (winner == null || ci.totalCount > winner.totalCount) {
-						winner = ci;
-					}
-				}
-			} else if (rs1.size() == 1) {
+			if (rs1.size() == 1) {
 				winner = compareInfos.get(0);
 			}
 		}
@@ -236,7 +258,7 @@ public class Searcher {
 		int i = 0;
 		for(Store s: rs1) {
 			String foundcode = s.locationCode;
-			if (s == winner.store) {
+			if (winner!= null && winner.store!= null && s == winner.store) {
 				foundcode = Column.ANSI_RED + foundcode + Column.ANSI_RESET;
 			}
 			System.out.println(String.format("\t%d/%-13s:%30s---%s", i, foundcode, addColor(s.mallKeyword, Store.MALL_NAME, founds), 
@@ -250,7 +272,7 @@ public class Searcher {
 			return null;
 		}
 	}
-	
+
 	public int ss(String allines, String keywords, Column col) {
 		String allines_std = Store.standardizeByName(col.name, allines);
 		String[] newvals = keywords.split("\\|");

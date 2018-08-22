@@ -131,12 +131,16 @@ public class Column {
 			}
 			result0.add(new Result(prob, value));
 		}
-		for(int i = 0; i < 4; i++) {
+		
+		int selectedCount = 0;
+		while(true) {
 			Result rs = result0.poll();
-			if ((rs != null) && rs.prob > 0.5) {
-				result1.addAll(this.values.get(rs.value).rows);
-			} else {
+			if (rs == null) {
 				break;
+			} else {
+				if (rs.prob < 0.50 || (rs.prob < 0.85 && selectedCount >= 4)) break;
+				result1.addAll(this.values.get(rs.value).rows);
+				selectedCount++;
 			}
 		}
 		return result1;
@@ -181,12 +185,15 @@ public class Column {
 			}
 		}
 		Set<Store> result1 = new HashSet<Store>();
-		for(int i = 0; i < 4; i++) {
+		int selectedCount = 0;
+		while(true) {
 			Result rs = result0.poll();
-			if ((rs != null) && rs.prob > 0.5) {
-				result1.addAll(this.values.get(rs.value).rows);
-			} else {
+			if (rs == null) {
 				break;
+			} else {
+				if (rs.prob < 0.50 || (rs.prob < 0.85 && selectedCount >= 4)) break;
+				result1.addAll(this.values.get(rs.value).rows);
+				selectedCount++;
 			}
 		}
 		return result1;
