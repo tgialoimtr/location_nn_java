@@ -46,7 +46,16 @@ public class Searcher {
 			String[] bs = rawbs.split("\\|");
 			for (int i = 0; i < as.length; i++) {
 				for (int j = 0; j < bs.length; j++) {
-					if (as[i].equals(bs[j])) {
+					int dist = 999;
+					float dist_f = 1.0f;
+					if (as[i].length() > bs[j].length()) {
+						dist = Column.match(as[i].toUpperCase(), bs[j].toUpperCase(), null);
+						dist_f = 1f*dist/bs[j].length();
+					} else {
+						dist = Column.match(bs[j].toUpperCase(), as[i].toUpperCase(), null);
+						dist_f = 1f*dist/as[i].length();
+					}
+					if (dist_f < 0.15f) {
 						return true;
 					}
 				}
@@ -56,6 +65,7 @@ public class Searcher {
 		@Override
 		public int compareTo(final StoreCompareInfo other) {
 			// MALL
+			System.out.println("##" + this.store.mallKeyword + "##" +  other.store.mallKeyword + "##");
 			boolean samemall = same(this.store.mallKeyword, other.store.mallKeyword);
 			if (samemall) {
 				System.out.print("\tSame Mall ");
@@ -291,7 +301,7 @@ public class Searcher {
 			}			
 			String value = newval;
 			MatchResult mrs = new MatchResult();
-			int dist = col.match(allines_std, value, mrs);
+			int dist = Column.match(allines_std, value, mrs);
 
 			if ((!exact.equals(""))) {
 				if ((!mrs.matchedStr.contains(exact))) {
@@ -323,6 +333,7 @@ public class Searcher {
                 // use comma as separator
                 String[] row = line.split(cvsSplitBy, -1);
 //                Store store = new Store(row[0],row[4],row[6],row[2],row[1]);
+                System.out.println(line + row.length);
                 Store store = new Store(row[1],row[4],row[3],row[5],row[6]);
                 data.add(store);
             }

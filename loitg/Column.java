@@ -199,14 +199,14 @@ public class Column {
 		return result1;
 	}
 
-	private int min(int a, int b, int c) {
+	private static int min(int a, int b, int c) {
 		int result = a;
 		if (result > b) result = b;
 		if (result > c) result = c;
 		return result;
 	}
 	
-	public int match(String text, String pattern, MatchResult rs) {
+	public static int match(String text, String pattern, MatchResult rs) {
 		int n = text.length();
 		int m = pattern.length();
 		int[][] g = new int[m + 1][n + 1];
