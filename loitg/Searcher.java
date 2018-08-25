@@ -46,7 +46,17 @@ public class Searcher {
 			String[] bs = rawbs.split("\\|");
 			for (int i = 0; i < as.length; i++) {
 				for (int j = 0; j < bs.length; j++) {
-					if (as[i].equals(bs[j])) {
+					int dist = 999;
+					float dist_f = 1.0f;
+					if (as[i].length() > bs[j].length()) {
+					        dist = Column.match(as[i].toUpperCase(), bs[j].toUpperCase(), null);
+					        dist_f = 1f*dist/bs[j].length();
+					} else {
+					        dist = Column.match(bs[j].toUpperCase(), as[i].toUpperCase(), null);
+					        dist_f = 1f*dist/as[i].length();
+					}
+					if (dist_f < 0.15f) {
+
 						return true;
 					}
 				}
@@ -201,8 +211,8 @@ public class Searcher {
 		int maxVal = 0;
 		int totalVal = 0;
 		for (int i = 0; i < newvals.length; i++) {
+			String exact = Column.exactFromTelLot(newvals[i]);
 			String newval = Store.standardizeByName(col.name, newvals[i]);
-			String exact = "";
 			if (newval.contains("::")) {
 				String[] kwandexact = newval.split("::");
 				newval = kwandexact[0];
@@ -213,7 +223,7 @@ public class Searcher {
 			}			
 			String value = newval;
 			MatchResult mrs = new MatchResult();
-			int dist = col.match(allines_std, value, mrs);
+			int dist = Column.match(allines_std, value, mrs);
 
 			if ((!exact.equals(""))) {
 				if ((!mrs.matchedStr.contains(exact))) {
