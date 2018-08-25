@@ -289,8 +289,8 @@ public class Searcher {
 		int maxVal = 0;
 		int totalVal = 0;
 		for (int i = 0; i < newvals.length; i++) {
+			String exact = Column.exactFromTelLot(newvals[i]);
 			String newval = Store.standardizeByName(col.name, newvals[i]);
-			String exact = "";
 			if (newval.contains("::")) {
 				String[] kwandexact = newval.split("::");
 				newval = kwandexact[0];
@@ -333,7 +333,6 @@ public class Searcher {
                 // use comma as separator
                 String[] row = line.split(cvsSplitBy, -1);
 //                Store store = new Store(row[0],row[4],row[6],row[2],row[1]);
-                System.out.println(line + row.length);
                 Store store = new Store(row[1],row[4],row[3],row[5],row[6]);
                 data.add(store);
             }

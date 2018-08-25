@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.PriorityQueue;
 
 public class Column {
@@ -21,6 +23,10 @@ public class Column {
 	public static final String ANSI_CYAN = "\u001B[36m";
 	public static final String ANSI_WHITE = "\u001B[37m";
 	public static final List<String> ANSI_COLORS = Arrays.asList(ANSI_RED, ANSI_GREEN, ANSI_YELLOW, ANSI_BLUE, ANSI_PURPLE, ANSI_CYAN);
+	
+	private static final Pattern RE_TEL = Pattern.compile("[\\d]{4}[ -]?([\\d]{4})");
+	private static final Pattern RE_LOT = Pattern.compile("#([\\w\\d]\\d-\\d{2})");
+//	private static final Pattern RE_LOT = Pattern.compile("\\W+([MHNl21I][\\dOo$DBQRSIl\\']-?[\\dOoDBQ$SIl\\']{7,8}[ ]{0,3}-?[ ]{0,3}\\w)\\W+");
 	
 	public static String s2c(String input) {
 		int index = input.hashCode() % ANSI_COLORS.size();
@@ -60,6 +66,31 @@ public class Column {
 		this.shortWordPunish = swp;
 	}
 	
+	public static String exactFromTelLot(String telorlot) {
+		Matcher matcher_lot = RE_LOT.matcher(telorlot);
+		if (matcher_lot.find()) {
+			String temp = matcher_lot.group(1);
+//			System.out.println("gst1 - " + line);
+//			System.out.println(temp + "-->" + Store.standardizeByName(Store.GST_NO, temp));
+			//TODO: Standardize partly here, very dangerours code !
+			temp = temp.replaceAll("5", "S").replaceAll("::", " :: ").replaceAll("1", "I").replaceAll("0", "O").replaceAll("8", "B");
+			temp = temp.toUpperCase();
+			return temp;
+		}
+		Matcher matcher_tel = RE_TEL.matcher(telorlot);
+		if (matcher_tel.find()) {
+			String temp = matcher_tel.group(1);
+//			System.out.println("gst1 - " + line);
+//			System.out.println(temp + "-->" + Store.standardizeByName(Store.GST_NO, temp)); 
+			//TODO: Standardize partly here, very dangerours code !
+			temp = temp.replaceAll("5", "S").replaceAll("::", " :: ").replaceAll("1", "I").replaceAll("0", "O").replaceAll("8", "B");
+			temp = temp.toUpperCase();
+			return temp;
+		}
+		return "";
+		
+	}
+	
 	public void initAddRow(Store store) {
 		String rawval = store.getByColName(this.name);
 		if (rawval.isEmpty()) {
@@ -69,8 +100,9 @@ public class Column {
 		
 		String[] newvals = rawval.split("\\|");
 		for (int i = 0; i < newvals.length; i++) {
+			String exact = exactFromTelLot(newvals[i]);
+//			if (exact.length() > 0) System.out.println(newvals[i] + "::::6:::::" + exact);
 			String newval = Store.standardizeByName(this.name, newvals[i]);
-			String exact = "";
 			if (newval.contains("::")) {
 				String[] kwandexact = newval.split("::");
 				newval = kwandexact[0];

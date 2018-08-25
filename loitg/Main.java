@@ -151,7 +151,7 @@ public class Main {
 	public static void main(String[] args) {
 		if (args.length < 3) {
             if (args[0].equals("-v")) {
-                System.out.println("20180822T223400_analdat");
+                System.out.println("20180825T102000_analdat");
             }
 			System.out.println("groupby, texts, topx00, range/list");
 			System.exit(0);
