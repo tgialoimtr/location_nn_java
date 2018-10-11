@@ -143,10 +143,34 @@ public class Searcher {
 //		int temp = storeCol.match(alllines, "CENTRAL @STARVISTA");
 //		if (temp < dist) dist = temp;
 //		if (dist < 3) return null;
-		Set<Store> rs1 = gstCol.search(gst_list);
-		Set<Store> rs2 = storeCol.search(alllines);
+		Set<Store> rs1 = gstCol.search(gst_list, gstDetail);
+		Set<Store> rs2 = storeCol.search(alllines, storeDetail);
 		rs1.addAll(rs2);
-
+		
+		for (Store s : rs1) {
+			gstProbList = gstDetail.at(s);
+			storeProbList = storeDetail.at(s);
+			if (storeProbList != null) {
+				cond1 = storeProbList.length() >= 2;
+			} else {
+				cond1 = false;
+			}
+			if (gstProbList != null) {
+				cond2 = gstProbList[0] >= 0.99; // == 100%
+			} else {
+				cond2 = false;
+			}
+			if (gstProbList != null) && (storeProbList != null) {
+				cond3 = true;
+			} else {
+				cond3 = false;
+			}
+			if !(cond1 || cond2 || cond3) {
+				rs1.remove(s);
+			}
+		}
+		 
+		
 		if (rs1.size() >= 1) {
 			Set<Store> rs3 = mallCol.search(alllines);
 			Set<Store> rs4 = zipcodeCol.search(zipcode_list);

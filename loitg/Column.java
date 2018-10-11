@@ -124,7 +124,7 @@ public class Column {
 		}
 	}	
 	
-	public Set<Store> search(List<String> items) {	
+	public Set<Store> search(List<String> items, Map<Store, ArrayList<Float> > searchDetail) {	
 		Set<Store> result1 = new HashSet<Store>();
 		if (items.isEmpty()) return result1;
 		PriorityQueue<Result> result0 = new PriorityQueue<Result>(this.values.size(), Collections.reverseOrder());
@@ -141,12 +141,25 @@ public class Column {
 			result0.add(new Result(prob, value));
 		}
 		int selectedCount = 0;
+		searchDetail = Map<Store, ArrayList<Float> >();
 		while(true) {
 			Result rs = result0.poll();
 			if (rs == null) {
 				break;
 			} else {
 				if (rs.prob < 0.50 || (rs.prob < 0.90 && selectedCount >= 4)) break;
+				
+				for (Store s : this.values.get(rs.value).rows) {
+					detail = searchDetail.get(s);
+					if detail != null {
+						detail.add(prob);
+					} else {
+						temp = new ArrayList<Float>();
+						temp.add(prob);
+						searchDetail.put(s, temp);
+					}
+				}
+				
 				result1.addAll(this.values.get(rs.value).rows);
 				selectedCount++;
 			}
@@ -154,7 +167,7 @@ public class Column {
 		return result1;
 	}
 	
-	public Set<Store> search(String alllines) {
+	public Set<Store> search(String alllines, Map<Store, ArrayList<Float> > searchDetail) {
 		PriorityQueue<Result> result0 = new PriorityQueue<Result>(this.values.size(), Collections.reverseOrder());
 		String allines_std = Store.standardizeByName(this.name, alllines);
 		for(Map.Entry<String, Description> value_desc : this.values.entrySet()) {
@@ -182,6 +195,7 @@ public class Column {
 			}
 		}
 		Set<Store> result1 = new HashSet<Store>();
+		searchDetail = Map<Store, ArrayList<Float> >();
 		int selectedCount = 0;
 		while(true) {
 			Result rs = result0.poll();
@@ -189,7 +203,20 @@ public class Column {
 				break;
 			} else {
 				if (rs.prob < 0.50 || (rs.prob < 0.90 && selectedCount >= 4)) break;
+				
+				for (Store s : this.values.get(rs.value).rows) {
+					detail = searchDetail.get(s);
+					if detail != null {
+						detail.add(prob);
+					} else {
+						temp = new ArrayList<Float>();
+						temp.add(prob);
+						searchDetail.put(s, temp);
+					}
+				}
+				
 				result1.addAll(this.values.get(rs.value).rows);
+				
 				selectedCount++;
 			}
 		}
